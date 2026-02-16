@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HPC Cooling Decision MVP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">HPC Operator Decision Support</p>
+          <h1>Cooling Setpoint Exposure Flow</h1>
+        </div>
+        <div class="header-actions">
+          <span id="siteLabel" class="chip">Loading site...</span>
+          <button id="refreshStateBtn" class="btn ghost">Refresh Live Snapshot</button>
+        </div>
+      </header>
+
+      <section class="progress-row" aria-label="Decision workflow progress">
+        <div class="step active" data-step="1">1. Risk Moment</div>
+        <div class="step" data-step="2">2. Define Change</div>
+        <div class="step" data-step="3">3. Risk Concentration</div>
+        <div class="step" data-step="4">4. Apply vs Do Nothing</div>
+        <div class="step" data-step="5">5. Decision Summary</div>
+      </section>
+
+      <section id="screen1" class="screen active" aria-labelledby="screen1title">
+        <h2 id="screen1title">Screen 1: Risk Moment</h2>
+        <p id="riskSentence" class="lead"></p>
+
+        <div class="grid two-col">
+          <div class="panel">
+            <h3>Current Rack Thermal State</h3>
+            <div id="heatmapCurrent" class="heatmap" aria-label="Current qualitative rack heatmap"></div>
+            <div class="legend">
+              <span class="tag stable">Stable</span>
+              <span class="tag tight">Tight</span>
+              <span class="tag fragile">Fragile</span>
+              <span class="tag critical">Critical</span>
+            </div>
+          </div>
+          <div class="panel stack">
+            <div>
+              <h3>Current Snapshot</h3>
+              <ul id="snapshotList" class="summary-list"></ul>
+            </div>
+            <div>
+              <h3>Highest-Stressed Rack</h3>
+              <p id="stressRackInfo" class="mono"></p>
+            </div>
+            <button id="toDefineChangeBtn" class="btn primary">Define Change</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen2" class="screen" aria-labelledby="screen2title">
+        <h2 id="screen2title">Screen 2: Define the Change</h2>
+        <div class="grid two-col">
+          <div class="panel stack">
+            <h3>Setpoint Control</h3>
+            <p>Current setpoint: <strong id="currentSetpoint"></strong></p>
+            <label for="setpointSlider">Proposed increase</label>
+            <input id="setpointSlider" type="range" min="0" max="2" step="0.2" value="0.6" />
+            <p>Proposed setpoint: <strong id="proposedSetpoint"></strong></p>
+            <p class="note">Simulation based on recent load and live telemetry.</p>
+            <button id="simulateBtn" class="btn primary">Simulate Exposure</button>
+          </div>
+          <div class="panel stack">
+            <h3>Directional Preview</h3>
+            <div class="preview-row">
+              <span>Headroom shift</span>
+              <span id="previewHeadroom" class="badge tight">Tight → Fragile</span>
+            </div>
+            <div class="preview-row">
+              <span>Critical racks shift</span>
+              <span id="previewCritical" class="badge neutral">No change yet</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen3" class="screen" aria-labelledby="screen3title">
+        <h2 id="screen3title">Screen 3: Risk Concentration</h2>
+        <div class="grid two-col">
+          <div class="panel">
+            <h3>Post-Change Exposure Map</h3>
+            <div id="heatmapPost" class="heatmap" aria-label="Post-change rack heatmap"></div>
+            <p id="postSummary" class="lead compact"></p>
+          </div>
+          <div class="panel stack">
+            <h3>Top Affected Racks</h3>
+            <ul id="topAffected" class="summary-list"></ul>
+            <p class="note">Hover any rack for category explanation.</p>
+            <button id="toTradeoffBtn" class="btn primary">Compare Trade-Offs</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen4" class="screen" aria-labelledby="screen4title">
+        <h2 id="screen4title">Screen 4: Apply vs Do Nothing</h2>
+        <div class="panel">
+          <table class="tradeoff-table" aria-label="Decision trade-off table">
+            <thead>
+              <tr>
+                <th>Signal</th>
+                <th>Do Nothing</th>
+                <th>Apply Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Headroom Category</td>
+                <td id="tradeDoHeadroom"></td>
+                <td id="tradeApplyHeadroom"></td>
+              </tr>
+              <tr>
+                <td># Critical Racks</td>
+                <td id="tradeDoCritical"></td>
+                <td id="tradeApplyCritical"></td>
+              </tr>
+            </tbody>
+          </table>
+          <p id="tradeoffSentence" class="lead compact"></p>
+          <button id="toSummaryBtn" class="btn primary">Generate Summary</button>
+        </div>
+      </section>
+
+      <section id="screen5" class="screen" aria-labelledby="screen5title">
+        <h2 id="screen5title">Screen 5: Decision Summary</h2>
+        <div class="grid two-col">
+          <div class="panel stack">
+            <h3>Decision Log</h3>
+            <label for="decisionSelect">Decision</label>
+            <select id="decisionSelect">
+              <option value="Proceed">Proceed</option>
+              <option value="Delay" selected>Delay</option>
+              <option value="Adjust">Adjust</option>
+            </select>
+            <ul id="summaryBullets" class="summary-list"></ul>
+            <label for="operatorName">Operator</label>
+            <input id="operatorName" type="text" placeholder="Enter operator name" />
+            <label for="operatorNotes">Operator Suggestion / Notes</label>
+            <textarea
+              id="operatorNotes"
+              rows="4"
+              placeholder="Add your suggestions, observations, or rationale for this report"
+            ></textarea>
+            <p id="summaryTimestamp" class="mono"></p>
+            <button id="downloadBriefBtn" class="btn primary">Download Decision Brief (PDF)</button>
+          </div>
+          <div class="panel">
+            <h3>Post-Change Mini Heatmap</h3>
+            <div id="miniHeatmap" class="heatmap mini"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

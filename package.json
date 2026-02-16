@@ -1,0 +1,10 @@
+{
+  "name": "hpc-cooling-decision-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Decision-support MVP for HPC operators",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
